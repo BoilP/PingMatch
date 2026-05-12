@@ -3,139 +3,133 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, Send } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, Send, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { useAuth } from "@/components/AuthProvider";
 import RankBadge from "./RankBadge";
 import type { Message, Profile } from "@/types";
 
-interface ChatRoomProps {
-  matchId: string;
-  userId: string;
-  partner: Profile;
-  initialMessages: Message[];
-}
-
-export default function ChatRoom({
-  matchId,
-  userId,
-  partner,
-  initialMessages,
-}: ChatRoomProps) {
+export default function ChatRoom({ matchId }: { matchId: string }) {
+  const { user, loading: authLoading } = useAuth();
+  const router = useRouter();
   const supabase = createClient();
-  const [messages, setMessages] = useState<Message[]>(initialMessages);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [partner, setPartner] = useState<Profile | null>(null);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
+  const [loading, setLoading] = useState(true);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  // Scroll to bottom on new messages
+  useEffect(() => {
+    if (authLoading) return;
+    if (!user) { router.push("/auth/login"); return; }
+
+    async function load() {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: matchRaw } = await (supabase as any)
+        .from("matches").select("*").eq("id", matchId).single();
+      const match = matchRaw as { id: string; user1_id: string; user2_id: string; status: string } | null;
+
+      if (!match || match.status !== "matched" ||
+          (match.user1_id !== user!.id && match.user2_id !== user!.id)) {
+        router.push("/chat"); return;
+      }
+
+      const partnerId = match.user1_id === user!.id ? match.user2_id : match.user1_id;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: p } = await (supabase as any).from("profiles").select("*").eq("id", partnerId).single();
+      setPartner(p as Profile);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: msgs } = await (supabase as any)
+        .from("messages").select("*").eq("match_id", matchId)
+        .order("created_at", { ascending: true });
+      setMessages((msgs ?? []) as Message[]);
+      setLoading(false);
+    }
+
+    load();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, authLoading, matchId]);
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Supabase Realtime subscription
   useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const channel = (supabase as any)
+    if (!user) return;
+    const channel = supabase
       .channel(`chat:${matchId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "messages",
-          filter: `match_id=eq.${matchId}`,
-        },
-        (payload: { new: Message }) => {
-          const msg = payload.new as Message;
-          setMessages((prev) => {
-            if (prev.find((m) => m.id === msg.id)) return prev;
-            return [...prev, msg];
-          });
-        }
-      )
-      .subscribe();
-
-    return () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (supabase as any).removeChannel(channel);
-    };
-  }, [matchId, supabase]);
+      .on("postgres_changes" as any, {
+        event: "INSERT", schema: "public", table: "messages",
+        filter: `match_id=eq.${matchId}`,
+      }, (payload: { new: Message }) => {
+        setMessages(prev =>
+          prev.find(m => m.id === payload.new.id) ? prev : [...prev, payload.new]
+        );
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [matchId, user]);
 
   async function sendMessage(e: React.FormEvent) {
     e.preventDefault();
     const content = text.trim();
-    if (!content || sending) return;
-
+    if (!content || sending || !user) return;
     setSending(true);
     setText("");
-
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase as any).from("messages").insert({
-      match_id: matchId,
-      sender_id: userId,
-      content,
-    });
-
+    await (supabase as any).from("messages").insert({ match_id: matchId, sender_id: user.id, content });
     setSending(false);
   }
 
-  const avatarUrl =
-    partner.avatar_url ||
+  if (authLoading || loading || !partner) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 size={32} className="animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  const avatarUrl = partner.avatar_url ||
     `https://api.dicebear.com/8.x/avataaars/svg?seed=${partner.id}`;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <header className="flex items-center gap-3 px-4 pt-safe-top pt-6 pb-4 border-b border-border sticky top-0 bg-background z-10">
+      <header className="flex items-center gap-3 px-4 pt-12 pb-4 border-b border-border sticky top-0 bg-background z-10">
         <Link href="/chat" className="text-muted hover:text-white transition-colors">
           <ArrowLeft size={22} />
         </Link>
-        <Image
-          src={avatarUrl}
-          alt={partner.username}
-          width={40}
-          height={40}
-          className="rounded-full object-cover"
-        />
+        <Image src={avatarUrl} alt={partner.username} width={40} height={40}
+          className="rounded-full object-cover" />
         <div>
-          <p className="font-semibold text-white leading-tight">
-            {partner.username}
-          </p>
+          <p className="font-semibold text-white leading-tight">{partner.username}</p>
           <RankBadge points={partner.rank_points} size="sm" showPoints />
         </div>
       </header>
 
-      {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2">
         {messages.length === 0 && (
           <div className="text-center text-muted py-10">
             <p>Кажи здравей на {partner.username}! 🏓</p>
           </div>
         )}
-
-        {messages.map((msg) => {
-          const isMe = msg.sender_id === userId;
+        {messages.map(msg => {
+          const isMe = msg.sender_id === user?.id;
           return (
-            <div
-              key={msg.id}
-              className={`flex ${isMe ? "justify-end" : "justify-start"}`}
-            >
-              <div
-                className={`max-w-[75%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
-                  isMe
-                    ? "bg-primary text-black rounded-br-md font-medium"
-                    : "bg-surface border border-border text-white rounded-bl-md"
-                }`}
-              >
+            <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
+              <div className={`max-w-[75%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
+                isMe
+                  ? "bg-primary text-black rounded-br-md font-medium"
+                  : "bg-surface border border-border text-white rounded-bl-md"
+              }`}>
                 {msg.content}
-                <p
-                  className={`text-xs mt-1 ${
-                    isMe ? "text-black/50" : "text-muted"
-                  }`}
-                >
+                <p className={`text-xs mt-1 ${isMe ? "text-black/50" : "text-muted"}`}>
                   {new Date(msg.created_at).toLocaleTimeString("bg", {
-                    hour: "2-digit",
-                    minute: "2-digit",
+                    hour: "2-digit", minute: "2-digit",
                   })}
                 </p>
               </div>
@@ -145,24 +139,14 @@ export default function ChatRoom({
         <div ref={bottomRef} />
       </div>
 
-      {/* Input */}
-      <form
-        onSubmit={sendMessage}
-        className="flex items-center gap-3 px-4 py-3 border-t border-border bg-surface"
-      >
-        <input
-          type="text"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
+      <form onSubmit={sendMessage}
+        className="flex items-center gap-3 px-4 py-3 border-t border-border bg-surface">
+        <input type="text" value={text} onChange={e => setText(e.target.value)}
           placeholder="Напиши съобщение..."
           className="flex-1 bg-card border border-border rounded-xl px-4 py-2.5 text-white placeholder-muted focus:outline-none focus:border-primary transition-colors text-sm"
-          maxLength={1000}
-        />
-        <button
-          type="submit"
-          disabled={!text.trim() || sending}
-          className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center disabled:opacity-40 transition-opacity active:scale-95"
-        >
+          maxLength={1000} />
+        <button type="submit" disabled={!text.trim() || sending}
+          className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center disabled:opacity-40 transition-opacity active:scale-95">
           <Send size={16} className="text-black" />
         </button>
       </form>
