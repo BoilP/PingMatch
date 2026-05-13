@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800;0,14..32,900&display=swap');
 
 * {
   box-sizing: border-box;
@@ -17,61 +17,46 @@ body {
   background-color: #080808;
   color: #fafafa;
   font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: #111111;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #2a2a2a;
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #3a3a3a;
-}
-
-/* Tinder card overrides */
-.swipe {
-  position: absolute;
-}
-
-.card-container {
-  width: 100%;
-  max-width: 380px;
-  height: 520px;
-  position: relative;
-}
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #3a3a3a; }
 
 /* Leaflet map dark theme */
-.leaflet-container {
-  background: #1a1a1a !important;
-}
+.leaflet-container { background: #111 !important; }
+.leaflet-tile { filter: brightness(0.65) saturate(0.5) hue-rotate(5deg) !important; }
+.leaflet-control-attribution { display: none !important; }
 
-.leaflet-tile {
-  filter: brightness(0.7) saturate(0.6) !important;
-}
-
-/* Auth input styles */
+/* Auth inputs */
 .auth-input {
-  @apply w-full bg-card border border-border rounded-xl px-4 py-3 text-white placeholder-muted focus:outline-none focus:border-primary transition-colors;
+  @apply w-full bg-surface border border-border rounded-2xl px-4 py-3 text-white placeholder-muted/60 focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/20 transition-all;
 }
 
-/* Button variants */
+/* Buttons */
 .btn-primary {
-  @apply bg-primary hover:bg-primary-dark text-black font-semibold px-6 py-3 rounded-xl transition-all duration-200 active:scale-95;
+  @apply relative overflow-hidden bg-primary hover:bg-primary-light text-black font-bold px-6 py-3 rounded-2xl transition-all duration-200 active:scale-[0.97] shadow-[0_0_20px_rgba(34,197,94,0.25)] hover:shadow-[0_0_28px_rgba(34,197,94,0.4)];
 }
 
 .btn-secondary {
-  @apply bg-card hover:bg-border text-white font-medium px-6 py-3 rounded-xl border border-border transition-all duration-200 active:scale-95;
+  @apply bg-white/5 hover:bg-white/10 text-white font-semibold px-6 py-3 rounded-2xl border border-white/10 hover:border-white/20 transition-all duration-200 active:scale-[0.97];
 }
 
 .btn-danger {
-  @apply bg-danger hover:bg-red-700 text-white font-semibold px-6 py-3 rounded-xl transition-all duration-200 active:scale-95;
+  @apply bg-danger hover:bg-red-600 text-white font-bold px-6 py-3 rounded-2xl transition-all duration-200 active:scale-[0.97] shadow-[0_0_20px_rgba(239,68,68,0.2)];
 }
+
+/* Glass card */
+.glass {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+/* Glow effects */
+.glow-primary { box-shadow: 0 0 24px rgba(34, 197, 94, 0.3); }
+.glow-danger  { box-shadow: 0 0 24px rgba(239, 68, 68, 0.3); }

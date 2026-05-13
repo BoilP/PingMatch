@@ -108,7 +108,7 @@ export default function DiscoverPage() {
       });
       const result = data as { matched: boolean; match_id: string | null } | null;
       if (result?.matched && result.match_id) {
-        router.push(`/chat/${result.match_id}`);
+        router.push(`/result/${result.match_id}`);
       }
     } catch (err) {
       console.error("Swipe error:", err);
@@ -285,20 +285,29 @@ export default function DiscoverPage() {
 
       {/* Action buttons */}
       {!noMore && topCard && (
-        <div className="flex items-center justify-center gap-10 py-6 pb-24">
+        <div className="flex items-center justify-center gap-8 py-5 pb-24">
           <button
             onClick={() => handleSwipe("left")}
             disabled={isAnimating}
-            className="w-16 h-16 rounded-full bg-surface border-2 border-danger/50 flex items-center justify-center hover:bg-danger/10 transition-colors active:scale-90 disabled:opacity-40"
+            className="w-16 h-16 rounded-full bg-surface border border-danger/40 flex items-center justify-center hover:bg-danger/10 hover:border-danger/70 hover:shadow-[0_0_20px_rgba(239,68,68,0.3)] transition-all active:scale-90 disabled:opacity-40"
           >
-            <X size={30} className="text-danger" />
+            <X size={28} className="text-danger" strokeWidth={2.5} />
           </button>
+
           <button
             onClick={() => handleSwipe("right")}
             disabled={isAnimating}
-            className="w-16 h-16 rounded-full bg-surface border-2 border-primary/50 flex items-center justify-center hover:bg-primary/10 transition-colors active:scale-90 disabled:opacity-40"
+            className="w-20 h-20 rounded-full bg-primary flex items-center justify-center hover:bg-primary-light shadow-glow hover:shadow-glow-lg transition-all active:scale-90 disabled:opacity-40"
           >
-            <Check size={30} className="text-primary" />
+            <Check size={34} className="text-black" strokeWidth={3} />
+          </button>
+
+          <button
+            onClick={() => handleSwipe("left")}
+            disabled={isAnimating}
+            className="w-16 h-16 rounded-full bg-surface border border-border flex items-center justify-center hover:bg-white/5 hover:border-white/20 transition-all active:scale-90 disabled:opacity-40"
+          >
+            <RefreshCw size={20} className="text-muted" />
           </button>
         </div>
       )}

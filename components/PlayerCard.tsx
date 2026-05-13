@@ -5,7 +5,7 @@ import Image from "next/image";
 import RankBadge from "./RankBadge";
 import { isVideo } from "./MediaUpload";
 import type { Profile } from "@/types";
-import { MapPin, Trophy, Swords, ChevronLeft, ChevronRight } from "lucide-react";
+import { MapPin, Trophy, Swords } from "lucide-react";
 
 interface PlayerCardProps {
   profile: Profile;
@@ -37,113 +37,90 @@ export default function PlayerCard({ profile }: PlayerCardProps) {
   }
 
   return (
-    <div className="relative w-full h-full rounded-3xl overflow-hidden select-none bg-card border border-border shadow-2xl">
-      {/* Media background */}
+    <div className="relative w-full h-full rounded-3xl overflow-hidden select-none bg-card shadow-card-lg">
+      {/* Media */}
       <div className="absolute inset-0">
         {isVideo(current) ? (
-          <video
-            key={current}
-            src={current}
+          <video key={current} src={current}
             className="absolute inset-0 w-full h-full object-cover"
-            autoPlay muted playsInline loop
-          />
+            autoPlay muted playsInline loop />
         ) : (
-          <Image
-            key={current}
-            src={current}
-            alt={profile.username}
-            fill
-            className="object-cover"
-            draggable={false}
-            priority
-          />
+          <Image key={current} src={current} alt={profile.username}
+            fill className="object-cover" draggable={false} priority />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
+        {/* Gradient — stronger at bottom */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-black/10" />
       </div>
 
-      {/* Dots indicator */}
+      {/* Dots */}
       {mediaItems.length > 1 && (
-        <div className="absolute top-3 left-0 right-0 flex justify-center gap-1 z-20 pointer-events-none">
+        <div className="absolute top-4 left-0 right-0 flex justify-center gap-1.5 z-20 pointer-events-none">
           {mediaItems.map((_, i) => (
-            <div key={i}
-              className={`h-1 rounded-full transition-all duration-200 ${
-                i === idx ? "w-5 bg-white" : "w-1.5 bg-white/40"
-              }`}
-            />
+            <div key={i} className={`h-[3px] rounded-full transition-all duration-300 ${
+              i === idx ? "w-6 bg-white" : "w-2 bg-white/35"
+            }`} />
           ))}
         </div>
       )}
 
-      {/* Navigation tap zones */}
+      {/* Tap zones */}
       {mediaItems.length > 1 && (
         <>
-          <button
-            onPointerDown={prev}
-            className="absolute left-0 inset-y-0 w-1/3 z-20 flex items-center justify-start pl-2 opacity-0 hover:opacity-100 transition-opacity"
-            aria-label="Предишна"
-          >
-            <div className="bg-black/40 rounded-full p-1">
-              <ChevronLeft size={18} className="text-white" />
-            </div>
-          </button>
-          <button
-            onPointerDown={next}
-            className="absolute right-0 inset-y-0 w-1/3 z-20 flex items-center justify-end pr-2 opacity-0 hover:opacity-100 transition-opacity"
-            aria-label="Следваща"
-          >
-            <div className="bg-black/40 rounded-full p-1">
-              <ChevronRight size={18} className="text-white" />
-            </div>
-          </button>
+          <button onPointerDown={prev}
+            className="absolute left-0 inset-y-0 w-1/3 z-20" aria-label="Предишна" />
+          <button onPointerDown={next}
+            className="absolute right-0 inset-y-0 w-1/3 z-20" aria-label="Следваща" />
         </>
       )}
 
-      {/* Content overlay */}
-      <div className="absolute bottom-0 left-0 right-0 p-6 space-y-3 z-10">
+      {/* Skill badge top-right */}
+      <div className="absolute top-4 right-4 z-10">
+        <span className="text-xs font-semibold bg-black/50 backdrop-blur-sm text-white/90 px-2.5 py-1 rounded-full border border-white/10">
+          {profile.skill_level}
+        </span>
+      </div>
+
+      {/* Info overlay */}
+      <div className="absolute bottom-0 left-0 right-0 p-5 space-y-2.5 z-10">
         {/* Name + age */}
-        <div className="flex items-end gap-2">
-          <h2 className="text-2xl font-bold text-white leading-none">{profile.username}</h2>
-          {profile.age && <span className="text-xl text-white/80">{profile.age}</span>}
+        <div className="flex items-baseline gap-2">
+          <h2 className="text-2xl font-black text-white leading-none tracking-tight">
+            {profile.username}
+          </h2>
+          {profile.age && (
+            <span className="text-lg text-white/60 font-semibold">{profile.age}</span>
+          )}
         </div>
 
         {/* Rank */}
-        <div>
-          <RankBadge points={profile.rank_points} showPoints />
-        </div>
+        <RankBadge points={profile.rank_points} showPoints />
 
-        {/* Stats */}
-        <div className="flex items-center gap-4 text-sm">
-          <span className="flex items-center gap-1 text-primary font-medium">
-            <Trophy size={14} />{profile.wins}W
-          </span>
-          <span className="flex items-center gap-1 text-danger font-medium">
-            <Swords size={14} />{profile.losses}L
-          </span>
-          <span className="text-white/60">{winRate}% winrate</span>
-        </div>
-
-        {/* Location + skill */}
-        <div className="flex items-center justify-between">
-          <span className="flex items-center gap-1 text-white/60 text-sm">
-            <MapPin size={13} />{profile.city}
-          </span>
-          <span className="text-xs bg-white/10 text-white/80 px-2 py-1 rounded-full">
-            {profile.skill_level}
-          </span>
+        {/* Stats row */}
+        <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5 bg-black/40 backdrop-blur-sm border border-white/8 rounded-xl px-3 py-1.5">
+            <Trophy size={12} className="text-primary" />
+            <span className="text-xs font-bold text-white">{profile.wins}W</span>
+          </div>
+          <div className="flex items-center gap-1.5 bg-black/40 backdrop-blur-sm border border-white/8 rounded-xl px-3 py-1.5">
+            <Swords size={12} className="text-danger" />
+            <span className="text-xs font-bold text-white">{profile.losses}L</span>
+          </div>
+          <div className="flex items-center gap-1.5 bg-black/40 backdrop-blur-sm border border-white/8 rounded-xl px-3 py-1.5">
+            <span className="text-xs font-bold text-white">{winRate}%</span>
+          </div>
+          {profile.city && (
+            <div className="flex items-center gap-1 bg-black/40 backdrop-blur-sm border border-white/8 rounded-xl px-3 py-1.5 ml-auto">
+              <MapPin size={10} className="text-white/50" />
+              <span className="text-xs text-white/70 font-medium">{profile.city}</span>
+            </div>
+          )}
         </div>
 
         {/* Bio */}
         {profile.bio && (
-          <p className="text-sm text-white/70 line-clamp-2">{profile.bio}</p>
-        )}
-
-        {/* Media count badge */}
-        {mediaItems.length > 1 && (
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs text-white/50">
-              {idx + 1}/{mediaItems.length} {isVideo(current) ? "🎥" : "📷"}
-            </span>
-          </div>
+          <p className="text-xs text-white/60 leading-relaxed line-clamp-2 font-medium">
+            {profile.bio}
+          </p>
         )}
       </div>
     </div>
