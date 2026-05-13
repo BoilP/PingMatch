@@ -45,7 +45,7 @@ export default function DuelRoom({ params }: Props) {
   const [locations, setLocations] = useState<TableLocation[]>([]);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
-  const [tab, setTab] = useState<Tab>("chat");
+  const [tab, setTab] = useState<Tab>("result");
 
   // Result form
   const [winner, setWinner] = useState<"me" | "partner" | null>(null);
@@ -64,7 +64,9 @@ export default function DuelRoom({ params }: Props) {
         .from("matches").select("*").eq("id", matchId).single();
       const match = matchRaw as { id: string; user1_id: string; user2_id: string; status: string } | null;
 
-      if (!match || match.status !== "matched") { router.push("/discover"); return; }
+      if (!match || (match.user1_id !== user!.id && match.user2_id !== user!.id)) {
+        router.push("/discover"); return;
+      }
 
       // If result already recorded → go to regular chat
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
