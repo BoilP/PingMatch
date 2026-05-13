@@ -22,6 +22,7 @@ export interface Database {
           rank_points: number;
           wins: number;
           losses: number;
+          media_urls: string[] | null;
           created_at: string;
           updated_at: string;
         };
@@ -37,6 +38,7 @@ export interface Database {
           rank_points?: number;
           wins?: number;
           losses?: number;
+          media_urls?: string[] | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -52,6 +54,7 @@ export interface Database {
           rank_points?: number;
           wins?: number;
           losses?: number;
+          media_urls?: string[] | null;
           created_at?: string;
           updated_at?: string;
         };

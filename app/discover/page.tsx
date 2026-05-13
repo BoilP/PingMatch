@@ -7,7 +7,8 @@ import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/components/AuthProvider";
 import BottomNav from "@/components/BottomNav";
 import PlayerCard from "@/components/PlayerCard";
-import { X, Check, RefreshCw, Loader2 } from "lucide-react";
+import { X, Check, RefreshCw, Loader2, SlidersHorizontal } from "lucide-react";
+import { BG_CITIES, SKILL_LEVELS } from "@/types";
 import type { Profile } from "@/types";
 
 const SWIPE_THRESHOLD = 80;
@@ -24,44 +25,65 @@ export default function DiscoverPage() {
   const [isAnimating, setIsAnimating] = useState(false);
   const [exitDir, setExitDir] = useState<"left" | "right" | null>(null);
 
+  // Filters
+  const [showFilters, setShowFilters] = useState(false);
+  const [filterCity, setFilterCity] = useState("");
+  const [filterSkill, setFilterSkill] = useState("");
+  const activeFilters = (filterCity ? 1 : 0) + (filterSkill ? 1 : 0);
+
   useEffect(() => {
     if (authLoading) return;
     if (!user) { router.push("/auth/login"); return; }
 
-    async function load() {
-      // Зареди собствения профил
+    async function init() {
       const { data: me } = await supabase
         .from("profiles").select("*").eq("id", user!.id).single();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       setMyProfile((me as any) as Profile | null);
-
-      // Вземи вече swipe-нати профили
-      const { data: swipedRaw } = await supabase
-        .from("matches").select("user2_id").eq("user1_id", user!.id);
-      const swipedIds = ((swipedRaw ?? []) as { user2_id: string }[]).map(s => s.user2_id);
-
-      // Вземи кандидати
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let q: any = supabase
-        .from("profiles").select("*")
-        .neq("id", user!.id)
-        .order("rank_points", { ascending: false })
-        .limit(20);
-
-      if (swipedIds.length > 0) {
-        q = q.not("id", "in", `(${swipedIds.join(",")})`);
-      }
-
-      const { data: list } = await q;
-      const result = (list ?? []) as Profile[];
-      setProfiles(result);
-      setCurrentIndex(result.length - 1);
-      setLoading(false);
+      await fetchProfiles("", "");
     }
 
-    load();
+    init();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, authLoading]);
+
+  async function fetchProfiles(city: string, skill: string) {
+    if (!user) return;
+    setLoading(true);
+
+    const { data: swipedRaw } = await supabase
+      .from("matches").select("user2_id").eq("user1_id", user.id);
+    const swipedIds = ((swipedRaw ?? []) as { user2_id: string }[]).map(s => s.user2_id);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let q: any = supabase
+      .from("profiles").select("*")
+      .neq("id", user.id)
+      .order("rank_points", { ascending: false })
+      .limit(20);
+
+    if (swipedIds.length > 0) q = q.not("id", "in", `(${swipedIds.join(",")})`);
+    if (city)  q = q.eq("city", city);
+    if (skill) q = q.eq("skill_level", skill);
+
+    const { data: list } = await q;
+    const result = (list ?? []) as Profile[];
+    setProfiles(result);
+    setCurrentIndex(result.length - 1);
+    setLoading(false);
+  }
+
+  function applyFilters() {
+    setShowFilters(false);
+    fetchProfiles(filterCity, filterSkill);
+  }
+
+  function resetFilters() {
+    setFilterCity("");
+    setFilterSkill("");
+    setShowFilters(false);
+    fetchProfiles("", "");
+  }
 
   async function handleSwipe(direction: "left" | "right") {
     if (currentIndex < 0 || isAnimating || !myProfile) return;
@@ -69,7 +91,6 @@ export default function DiscoverPage() {
     const profile = profiles[currentIndex];
     if (!profile) return;
 
-    // Анимирай картата
     setIsAnimating(true);
     setExitDir(direction);
     await new Promise(r => setTimeout(r, 300));
@@ -77,7 +98,6 @@ export default function DiscoverPage() {
     setExitDir(null);
     setIsAnimating(false);
 
-    // Запиши в базата
     const action = direction === "right" ? "like" : "pass";
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -95,20 +115,6 @@ export default function DiscoverPage() {
     }
   }
 
-  async function reload() {
-    if (!user) return;
-    setLoading(true);
-    const { data: list } = await supabase
-      .from("profiles").select("*")
-      .neq("id", user.id)
-      .order("rank_points", { ascending: false })
-      .limit(20);
-    const result = (list ?? []) as Profile[];
-    setProfiles(result);
-    setCurrentIndex(result.length - 1);
-    setLoading(false);
-  }
-
   const topCard = currentIndex >= 0 ? profiles[currentIndex] : null;
   const noMore = !loading && !authLoading && currentIndex < 0;
 
@@ -122,28 +128,120 @@ export default function DiscoverPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <header className="flex items-center justify-between px-5 pt-8 pb-4">
+      {/* Header */}
+      <header className="flex items-center justify-between px-5 pt-8 pb-3">
         <h1 className="text-2xl font-extrabold">
           Ping<span className="text-primary">Match</span>
         </h1>
-        {currentIndex >= 0 && (
-          <span className="text-muted text-sm">{currentIndex + 1} профила</span>
-        )}
+        <div className="flex items-center gap-3">
+          {currentIndex >= 0 && (
+            <span className="text-muted text-sm">{currentIndex + 1} профила</span>
+          )}
+          <button
+            onClick={() => setShowFilters(prev => !prev)}
+            className={`relative p-2 rounded-xl border transition-colors ${
+              showFilters || activeFilters > 0
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-border text-muted hover:text-white"
+            }`}
+          >
+            <SlidersHorizontal size={18} />
+            {activeFilters > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-primary rounded-full text-black text-[10px] font-bold flex items-center justify-center">
+                {activeFilters}
+              </span>
+            )}
+          </button>
+        </div>
       </header>
 
+      {/* Filter panel */}
+      <AnimatePresence>
+        {showFilters && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden px-5"
+          >
+            <div className="bg-surface border border-border rounded-2xl p-4 space-y-3 mb-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-muted mb-1 block">Град</label>
+                  <select value={filterCity} onChange={e => setFilterCity(e.target.value)}
+                    className="auth-input text-sm py-2">
+                    <option value="" className="bg-card">Всички градове</option>
+                    {BG_CITIES.map(c => (
+                      <option key={c} value={c} className="bg-card">{c}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs text-muted mb-1 block">Ниво</label>
+                  <select value={filterSkill} onChange={e => setFilterSkill(e.target.value)}
+                    className="auth-input text-sm py-2">
+                    <option value="" className="bg-card">Всички нива</option>
+                    {SKILL_LEVELS.map(s => (
+                      <option key={s} value={s} className="bg-card">{s}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={applyFilters} className="btn-primary flex-1 text-sm py-2">Търси</button>
+                {activeFilters > 0 && (
+                  <button onClick={resetFilters} className="btn-secondary text-sm py-2 px-4">Нулирай</button>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Active filter chips */}
+      {activeFilters > 0 && !showFilters && (
+        <div className="flex gap-2 px-5 pb-2 flex-wrap">
+          {filterCity && (
+            <span className="text-xs bg-primary/10 text-primary border border-primary/30 px-2.5 py-1 rounded-full flex items-center gap-1">
+              📍 {filterCity}
+              <button onClick={() => { setFilterCity(""); fetchProfiles("", filterSkill); }}>×</button>
+            </span>
+          )}
+          {filterSkill && (
+            <span className="text-xs bg-primary/10 text-primary border border-primary/30 px-2.5 py-1 rounded-full flex items-center gap-1">
+              🏓 {filterSkill}
+              <button onClick={() => { setFilterSkill(""); fetchProfiles(filterCity, ""); }}>×</button>
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Cards area */}
       <div className="flex-1 flex flex-col items-center justify-center px-4 pb-4">
         {noMore ? (
           <div className="text-center space-y-4">
             <span className="text-6xl">🏓</span>
-            <h3 className="text-xl font-bold">Няма повече профили</h3>
-            <p className="text-muted text-sm">Провери отново по-късно</p>
-            <button onClick={reload} className="btn-secondary flex items-center gap-2 mx-auto">
-              <RefreshCw size={16} /> Опресни
-            </button>
+            <h3 className="text-xl font-bold">
+              {activeFilters > 0 ? "Няма профили с тези филтри" : "Няма повече профили"}
+            </h3>
+            <p className="text-muted text-sm">
+              {activeFilters > 0 ? "Промени или нулирай филтрите" : "Провери отново по-късно"}
+            </p>
+            <div className="flex gap-3 justify-center flex-wrap">
+              {activeFilters > 0 && (
+                <button onClick={resetFilters} className="btn-secondary flex items-center gap-2">
+                  Нулирай филтрите
+                </button>
+              )}
+              <button onClick={() => fetchProfiles(filterCity, filterSkill)}
+                className="btn-secondary flex items-center gap-2">
+                <RefreshCw size={16} /> Опресни
+              </button>
+            </div>
           </div>
         ) : (
           <div className="relative" style={{ width: 340, height: 520 }}>
-            {/* Фонови карти (stack ефект) */}
             {[currentIndex - 1, currentIndex - 2].map((idx, i) => {
               if (idx < 0 || !profiles[idx]) return null;
               return (
@@ -157,7 +255,6 @@ export default function DiscoverPage() {
               );
             })}
 
-            {/* Горна карта */}
             <AnimatePresence>
               {topCard && (
                 <motion.div
@@ -165,8 +262,8 @@ export default function DiscoverPage() {
                   className="absolute inset-0"
                   style={{ zIndex: 10 }}
                   animate={
-                    exitDir === "left" ? { x: -600, rotate: -25, opacity: 0 }
-                    : exitDir === "right" ? { x: 600, rotate: 25, opacity: 0 }
+                    exitDir === "left"  ? { x: -600, rotate: -25, opacity: 0 }
+                    : exitDir === "right" ? { x: 600,  rotate: 25,  opacity: 0 }
                     : { x: 0, rotate: 0, opacity: 1 }
                   }
                   transition={{ duration: 0.3, ease: "easeInOut" }}
@@ -186,7 +283,7 @@ export default function DiscoverPage() {
         )}
       </div>
 
-      {/* Бутони */}
+      {/* Action buttons */}
       {!noMore && topCard && (
         <div className="flex items-center justify-center gap-10 py-6 pb-24">
           <button
@@ -196,7 +293,6 @@ export default function DiscoverPage() {
           >
             <X size={30} className="text-danger" />
           </button>
-
           <button
             onClick={() => handleSwipe("right")}
             disabled={isAnimating}
