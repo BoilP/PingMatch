@@ -3,6 +3,7 @@ import "./globals.css";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import Script from "next/script";
 import { AuthProvider } from "@/components/AuthProvider";
+import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   title: "PingMatch — Намери своя следващ противник",
@@ -65,6 +66,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         </Script>
 
         {gaId && <GoogleAnalytics gaId={gaId} />}
+        <Analytics />
       </body>
     </html>
   );

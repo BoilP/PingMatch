@@ -13,6 +13,7 @@
     "@react-spring/web": "^9.7.5",
     "@supabase/ssr": "^0.3.0",
     "@supabase/supabase-js": "^2.44.4",
+    "@vercel/analytics": "^2.0.1",
     "framer-motion": "^11.3.0",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.400.0",
