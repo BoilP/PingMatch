@@ -57,7 +57,7 @@ export default function ProfilePage() {
     ? Math.round((profile.wins / (profile.wins + profile.losses)) * 100) : 0;
 
   const avatarUrl = profile.avatar_url ||
-    `https://api.dicebear.com/8.x/avataaars/svg?seed=${profile.id}`;
+    `https://api.dicebear.com/8.x/avataaars/png?seed=${profile.id}&backgroundColor=b6e3f4,c0aede,ffd5dc,ffdfbf`;
 
   const currentTierIdx = RANK_TIERS.findIndex(
     t => profile.rank_points >= t.minPoints && profile.rank_points <= t.maxPoints

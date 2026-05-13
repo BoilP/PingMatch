@@ -128,7 +128,7 @@ export default function ChatRoom({ matchId }: { matchId: string }) {
   }
 
   const avatarUrl = partner.avatar_url ||
-    `https://api.dicebear.com/8.x/avataaars/svg?seed=${partner.id}`;
+    `https://api.dicebear.com/8.x/avataaars/png?seed=${partner.id}&backgroundColor=b6e3f4,c0aede,ffd5dc,ffdfbf`;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">

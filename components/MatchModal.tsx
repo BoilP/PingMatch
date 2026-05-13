@@ -53,7 +53,7 @@ export default function MatchModal({
                 <Image
                   src={
                     currentProfile.avatar_url ||
-                    `https://api.dicebear.com/8.x/avataaars/svg?seed=${currentProfile.id}`
+                    `https://api.dicebear.com/8.x/avataaars/png?seed=${currentProfile.id}&backgroundColor=b6e3f4,c0aede,ffd5dc,ffdfbf`
                   }
                   alt="Вашият профил"
                   width={80}
@@ -66,7 +66,7 @@ export default function MatchModal({
                 <Image
                   src={
                     matchedProfile.avatar_url ||
-                    `https://api.dicebear.com/8.x/avataaars/svg?seed=${matchedProfile.id}`
+                    `https://api.dicebear.com/8.x/avataaars/png?seed=${matchedProfile.id}&backgroundColor=b6e3f4,c0aede,ffd5dc,ffdfbf`
                   }
                   alt={matchedProfile.username}
                   width={80}

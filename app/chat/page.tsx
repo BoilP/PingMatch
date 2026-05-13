@@ -113,7 +113,7 @@ export default function ChatListPage() {
           items.map(({ match, partner, lastMsg }) => {
             const avatarUrl =
               partner.avatar_url ||
-              `https://api.dicebear.com/8.x/avataaars/svg?seed=${partner.id}`;
+              `https://api.dicebear.com/8.x/avataaars/png?seed=${partner.id}&backgroundColor=b6e3f4,c0aede,ffd5dc,ffdfbf`;
             return (
               <Link
                 key={match.id}

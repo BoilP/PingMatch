@@ -17,7 +17,7 @@ export default function PlayerCard({ profile }: PlayerCardProps) {
       ? Math.round((profile.wins / (profile.wins + profile.losses)) * 100)
       : 0;
 
-  const defaultAvatar = `https://api.dicebear.com/8.x/avataaars/svg?seed=${profile.id}&backgroundColor=1a1a1a`;
+  const defaultAvatar = `https://api.dicebear.com/8.x/avataaars/png?seed=${profile.id}&backgroundColor=b6e3f4,c0aede,ffd5dc,ffdfbf`;
   const mediaItems: string[] = [
     ...(profile.avatar_url ? [profile.avatar_url] : [defaultAvatar]),
     ...(profile.media_urls ?? []),
