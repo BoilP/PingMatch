@@ -67,11 +67,7 @@ export default function ChatRoom({ matchId }: { matchId: string }) {
       const { data: resultData } = await (supabase as any)
         .from("game_results").select("id").eq("match_id", matchId).limit(1);
       const hasResult = ((resultData ?? []) as unknown[]).length > 0;
-      if (!hasResult) {
-        router.push(`/result/${matchId}`);
-        return;
-      }
-      setResultExists(true);
+      setResultExists(hasResult);
 
       setLoading(false);
     }
